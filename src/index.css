@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-base: #F8FAFC;
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-card-subtle: #F1F5F9;
+    --border-subtle: rgba(226, 232, 240, 0.9);
+    --border-focus: #6366F1;
+    --text-main: #0F172A;
+    --text-muted: #64748B;
+    --text-subtle: #94A3B8;
+  }
+
+  .dark {
+    --bg-base: #090D16;
+    --bg-card: rgba(15, 23, 42, 0.75);
+    --bg-card-subtle: rgba(30, 41, 59, 0.6);
+    --border-subtle: rgba(51, 65, 85, 0.6);
+    --border-focus: #818CF8;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --text-subtle: #64748B;
+  }
+
+  body {
+    @apply font-sans;
+    background-color: var(--bg-base);
+    color: var(--text-main);
+  }
+}
+
+/* Glassmorphic card utility */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+.glass-panel-subtle {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Light mode adjustments */
+html:not(.dark) body {
+  background-color: #F8FAFC;
+  color: #0F172A;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+}
+
+/* Wax Seal 3D Stamping Effect */
+@keyframes waxStamp {
+  0% {
+    transform: scale(3) rotate(-25deg);
+    opacity: 0;
+    filter: drop-shadow(0 0 0 rgba(185, 28, 28, 0));
+  }
+  60% {
+    transform: scale(0.9) rotate(3deg);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(1.05) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: drop-shadow(0 10px 15px rgba(185, 28, 28, 0.4));
+  }
+}
+
+.animate-wax-stamp {
+  animation: waxStamp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Radar ping wave */
+@keyframes radarSweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-sweep {
+  animation: radarSweep 4s linear infinite;
+  transform-origin: 50% 50%;
+}
+
