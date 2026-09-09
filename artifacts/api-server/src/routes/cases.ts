@@ -105,30 +105,82 @@ function mapExcelRowToCase(row: Record<string, any>) {
 }
 
 // GET /api/cases - List cases
-router.get("/", async (_req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
+    const q = req.query.q ? String(req.query.q).trim().toLowerCase() : "";
     if (db) {
       const casesList = await db.select().from(casesTable);
-      return res.json(casesList);
+      let formatted = casesList.map((c) => ({
+        id: c.id,
+        number: c.number,
+        title: c.title,
+        type: c.type,
+        court: c.court,
+        location: c.location,
+        status: c.status,
+        statusTone: (c.statusTone as "amber" | "teal" | "slate") || (c.status.toLowerCase().includes("review") ? "amber" : c.status.toLowerCase().includes("active") ? "teal" : "slate"),
+        nextReview: c.nextReview ? new Date(c.nextReview).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "18 Jun 2024",
+        updated: c.updatedAt ? "12 min ago" : "Recently",
+        description: c.description || "Case record imported in system.",
+        parties: Array.isArray(c.parties) ? c.parties : [],
+      }));
+
+      if (q) {
+        formatted = formatted.filter(
+          (c) =>
+            c.number.toLowerCase().includes(q) ||
+            c.title.toLowerCase().includes(q) ||
+            c.id.toLowerCase().includes(q) ||
+            c.type.toLowerCase().includes(q) ||
+            c.court.toLowerCase().includes(q) ||
+            c.status.toLowerCase().includes(q)
+        );
+      }
+      return res.json(formatted);
     }
     return res.json(initialCases);
   } catch (error) {
+    console.error("Error fetching cases:", error);
     return res.status(500).json({ error: "Failed to fetch cases" });
   }
 });
 
-// GET /api/cases/:id - Get case by ID
+// GET /api/cases/:id - Get case by ID or Case Number
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const id = String(req.params.id);
+    const searchParam = String(req.params.id).trim();
     if (db) {
-      const found = await db.select().from(casesTable).where(eq(casesTable.id, id));
-      if (found.length === 0) {
+      const allCases = await db.select().from(casesTable);
+      const found = allCases.find(
+        (c) =>
+          c.id === searchParam ||
+          c.number.toLowerCase() === searchParam.toLowerCase() ||
+          c.number.replace(/[^a-z0-9]/gi, "").toLowerCase() === searchParam.replace(/[^a-z0-9]/gi, "").toLowerCase()
+      );
+      if (!found) {
         return res.status(404).json({ error: "Case not found" });
       }
-      return res.json(found[0]);
+      return res.json({
+        id: found.id,
+        number: found.number,
+        title: found.title,
+        type: found.type,
+        court: found.court,
+        location: found.location,
+        status: found.status,
+        statusTone: (found.statusTone as "amber" | "teal" | "slate") || "amber",
+        nextReview: found.nextReview ? new Date(found.nextReview).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "18 Jun 2024",
+        updated: "12 min ago",
+        description: found.description || "Case record details in system.",
+        parties: Array.isArray(found.parties) ? found.parties : [],
+      });
     }
-    const foundLocal = initialCases.find((c) => c.id === id);
+    const foundLocal = initialCases.find(
+      (c) =>
+        c.id === searchParam ||
+        c.number.toLowerCase() === searchParam.toLowerCase() ||
+        c.number.replace(/[^a-z0-9]/gi, "").toLowerCase() === searchParam.replace(/[^a-z0-9]/gi, "").toLowerCase()
+    );
     if (!foundLocal) {
       return res.status(404).json({ error: "Case not found" });
     }
@@ -137,6 +189,7 @@ router.get("/:id", async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Failed to fetch case detail" });
   }
 });
+
 
 // POST /api/cases - Create single case
 router.post("/", async (req: Request, res: Response) => {

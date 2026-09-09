@@ -207,7 +207,8 @@ function Logo({ compact = false }: { compact?: boolean }) {
 }
 
 function StatusBadge({ status, tone }: { status: string; tone?: string }) {
-  return <span className={`status-badge status-${tone || status.toLowerCase().replace(/\s/g, '-')}`}><span className="status-dot" />{status}</span>;
+  const t = tone || (status.toLowerCase().includes('review') ? 'amber' : status.toLowerCase().includes('active') ? 'teal' : 'slate');
+  return <span className={`status-pill status-pill-${t}`}><span className="status-pill-dot" />{status}</span>;
 }
 
 function Toast({ toast, onClose }: { toast: ToastState; onClose: () => void }) {
@@ -244,14 +245,54 @@ function SideNav({ onLogout, mobileOpen, onMobileClose }: { onLogout: () => void
   </>;
 }
 
-function AppHeader({ onMenu, onLogout, onToast }: { onMenu: () => void; onLogout: () => void; onToast: (message: string, tone?: ToastTone) => void }) {
+function handleCaseSearch(queryStr: string, setLocationFn: (path: string) => void, casesList: Case[]) {
+  const trimmed = queryStr.trim();
+  if (!trimmed) return;
+  const qLower = trimmed.toLowerCase();
+  const qClean = qLower.replace(/[^a-z0-9]/gi, '');
+
+  // Search by exact case number, case ID, or partial number match
+  const match = casesList.find((c) =>
+    c.id.toLowerCase() === qLower ||
+    c.number.toLowerCase() === qLower ||
+    c.number.replace(/[^a-z0-9]/gi, '').toLowerCase() === qClean ||
+    (qClean.length >= 3 && c.number.replace(/[^a-z0-9]/gi, '').toLowerCase().includes(qClean))
+  );
+
+  if (match) {
+    // Open directly to the case window!
+    setLocationFn(`/case/${match.id}`);
+  } else {
+    setLocationFn(`/search?q=${encodeURIComponent(trimmed)}`);
+  }
+}
+
+function AppHeader({ onMenu, onLogout, onToast, casesList }: { onMenu: () => void; onLogout: () => void; onToast: (message: string, tone?: ToastTone) => void; casesList: Case[] }) {
   const [location, setLocation] = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [query, setQuery] = useState('');
+
+  const submitSearch = () => {
+    if (query.trim()) {
+      handleCaseSearch(query, setLocation, casesList);
+    }
+  };
+
   return <header className="app-header">
     <button className="mobile-menu-button icon-button" onClick={onMenu} aria-label="Open navigation" data-testid="button-open-navigation"><Menu size={20} /></button>
-    <div className="header-search"><Search size={17} /><input aria-label="Global case search" placeholder="Search cases, FIRs, documents…" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && query.trim()) setLocation(`/search?q=${encodeURIComponent(query.trim())}`); }} data-testid="input-global-search" /><kbd>⌘ K</kbd></div>
+    <div className="header-search">
+      <Search size={17} />
+      <input
+        aria-label="Global case search"
+        placeholder="Search cases by number (e.g. CRL.A. 0817 / 2024), FIR, title…"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={(event) => { if (event.key === 'Enter') submitSearch(); }}
+        data-testid="input-global-search"
+      />
+      <kbd>⌘ K</kbd>
+    </div>
     <div className="header-actions">
       <div className="notification-wrap">
         <button className="icon-button notification-button" onClick={() => setNotificationsOpen(!notificationsOpen)} aria-label="Open notifications" data-testid="button-notifications"><Bell size={18} /><span className="notification-dot" /></button>
@@ -265,9 +306,9 @@ function AppHeader({ onMenu, onLogout, onToast }: { onMenu: () => void; onLogout
   </header>;
 }
 
-function AppShell({ children, onLogout, onToast }: { children: ReactNode; onLogout: () => void; onToast: (message: string, tone?: ToastTone) => void }) {
+function AppShell({ children, onLogout, onToast, casesList }: { children: ReactNode; onLogout: () => void; onToast: (message: string, tone?: ToastTone) => void; casesList: Case[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  return <div className="app-frame"><SideNav onLogout={onLogout} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} /><div className="app-content"><AppHeader onMenu={() => setMobileOpen(true)} onLogout={onLogout} onToast={onToast} /><main className="app-main">{children}</main></div></div>;
+  return <div className="app-frame"><SideNav onLogout={onLogout} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} /><div className="app-content"><AppHeader onMenu={() => setMobileOpen(true)} onLogout={onLogout} onToast={onToast} casesList={casesList} /><main className="app-main">{children}</main></div></div>;
 }
 
 function PageHeading({ eyebrow, title, description, children }: { eyebrow?: string; title: string; description?: string; children?: ReactNode }) {
@@ -275,7 +316,24 @@ function PageHeading({ eyebrow, title, description, children }: { eyebrow?: stri
 }
 
 function CaseCard({ item }: { item: Case }) {
-  return <Link href={`/case/${item.id}`} className="case-card" data-testid={`card-case-${item.id}`}><div className="case-card-top"><span className="case-number">{item.number}</span><StatusBadge status={item.status} tone={item.statusTone} /></div><h3>{item.title}</h3><p>{item.type}<span className="dot-separator" />{item.court}</p><div className="case-card-bottom"><span><Clock3 size={13} /> Updated {item.updated}</span><ChevronRight size={17} /></div></Link>;
+  return (
+    <Link href={`/case/${item.id}`} className="case-card-tile" data-testid={`card-case-${item.id}`}>
+      <div className="case-card-tile-top">
+        <span className="case-tile-number">{item.number}</span>
+        <StatusBadge status={item.status} tone={item.statusTone} />
+      </div>
+      <h3 className="case-tile-title">{item.title}</h3>
+      <p className="case-tile-subtitle">
+        {item.type}<span className="dot-separator" />{item.court}
+      </p>
+      <div className="case-card-tile-bottom">
+        <span className="case-tile-updated">
+          <Clock3 size={13} /> Updated {item.updated || '12 min ago'}
+        </span>
+        <ChevronRight size={17} className="case-tile-chevron" />
+      </div>
+    </Link>
+  );
 }
 
 function HomeSkeleton() {
@@ -286,26 +344,51 @@ function HomeSkeleton() {
   </div>;
 }
 
-function HomePage({ onToast }: { onToast: (message: string, tone?: ToastTone) => void }) {
+function HomePage({ casesList, loading, onToast }: { casesList: Case[]; loading: boolean; onToast: (message: string, tone?: ToastTone) => void }) {
   const [location, setLocation] = useLocation();
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 260);
-    return () => window.clearTimeout(timer);
-  }, []);
+
+  const handleSearch = () => {
+    if (query.trim()) {
+      handleCaseSearch(query, setLocation, casesList);
+    }
+  };
+
   if (loading) return <HomeSkeleton />;
   return <div className="page page-home">
-    <div className="home-intro"><div><div className="eyebrow">Wednesday, 12 June 2024 <span className="eyebrow-rule" /></div><h1>Good morning, Priya<span className="title-mark">.</span></h1><p>Your workspace is clear. Three evidence items need your review.</p></div><div className="secure-chip"><span className="live-dot" /> Workspace secured <LockKeyhole size={14} /></div></div>
-    <section className="hero-search-panel"><div className="hero-search-copy"><span className="mini-kicker"><Search size={14} /> Find in your workspace</span><h2>What are you looking for?</h2><p>Search by case number, FIR, person, or a keyword in the evidence trail.</p></div><div className="hero-search-form"><div className="search-input-large"><Search size={20} /><input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && query.trim()) setLocation(`/search?q=${encodeURIComponent(query.trim())}`); }} placeholder="Try “FIR 118” or “Kavita Rao”" data-testid="input-home-search" /><span>⌘ K</span></div><button className="button button-primary" onClick={() => query.trim() && setLocation(`/search?q=${encodeURIComponent(query.trim())}`)} data-testid="button-home-search">Search workspace <ArrowRight size={16} /></button></div><div className="search-scope"><span>Search scope</span><button className="scope-selected" data-testid="button-search-scope-all">All accessible records <ChevronDown size={14} /></button><span className="scope-note"><ShieldCheck size={14} /> Access-controlled</span></div></section>
-    <section className="quick-access"><div className="section-label-row"><span className="section-kicker">Quick access</span><button onClick={() => setLocation('/search')} data-testid="button-view-all-search">View all cases <ArrowRight size={14} /></button></div><div className="quick-chips"><button onClick={() => setLocation('/search?q=assigned')} data-testid="chip-assigned"><BriefcaseBusiness size={16} /> My assigned cases <span>4</span></button><button onClick={() => setLocation('/search?status=review')} data-testid="chip-review"><FileCheck2 size={16} /> Pending review <span className="chip-alert">3</span></button><button onClick={() => setLocation('/search?type=evidence')} data-testid="chip-evidence"><Fingerprint size={16} /> Recently verified <span>12</span></button><button onClick={() => onToast('Saved searches are available in the full workspace', 'info')} data-testid="chip-saved"><BookOpen size={16} /> Saved searches</button></div></section>
-    <div className="home-grid"><section><div className="section-label-row"><div><span className="section-kicker">Recent cases</span><p className="section-subline">Your most recently accessed matters</p></div><Link href="/search" data-testid="link-see-all-cases">See all <ArrowRight size={14} /></Link></div><div className="case-list">{cases.slice(0, 3).map((item) => <CaseCard item={item} key={item.id} />)}</div></section><section className="review-panel" id="reviews"><div className="section-label-row"><div><span className="section-kicker">Needs your attention</span><p className="section-subline">Review before the next hearing</p></div><span className="count-pill">03</span></div><div className="review-list"><Link href="/case/nv-2023-1142/documents/ledger-118" className="review-item" data-testid="review-item-ledger"><div className="review-icon review-amber"><FileBadge size={17} /></div><div><strong>Forensic ledger export</strong><span>FIR 118 / 2023 · Integrity review</span><small>Due in 2 days</small></div><ChevronRight size={16} /></Link><Link href="/case/nv-2024-0671" className="review-item" data-testid="review-item-das"><div className="review-icon review-teal"><Gavel size={17} /></div><div><strong>Awaiting case review</strong><span>MISC 671 / 2024 · Bail application</span><small>Due in 7 days</small></div><ChevronRight size={16} /></Link><Link href="/case/nv-2024-0326/documents/judgment-0326" className="review-item" data-testid="review-item-order"><div className="review-icon review-slate"><LockKeyhole size={17} /></div><div><strong>Sealed order available</strong><span>CS 326 / 2024 · Court registry</span><small>Access restricted</small></div><ChevronRight size={16} /></Link></div><button className="button button-quiet review-button" onClick={() => onToast('Opening review queue…')} data-testid="button-open-review-queue">Open review queue <ArrowRight size={15} /></button></section></div>
-    <div className="activity-strip"><div><span className="activity-pulse" /><strong>Audit log operational</strong><span>Last synchronized 12 Jun 2024, 14:32 IST</span></div><button onClick={() => onToast('Audit log is available to authorized administrators', 'info')} data-testid="button-audit-log">View audit log <ArrowRight size={14} /></button></div>
+    <div className="home-intro"><div><div className="eyebrow">Wednesday, 12 June 2024 <span className="eyebrow-rule" /></div><h1>Good morning, Priya<span className="title-mark">.</span></h1><p>Your workspace is connected to <strong>{casesList.length} cases</strong> in the Neon Cloud Database.</p></div><div className="secure-chip"><span className="live-dot" /> Live DB Connected <LockKeyhole size={14} /></div></div>
+    <section className="hero-search-panel">
+      <div className="hero-search-copy">
+        <span className="mini-kicker"><Search size={14} /> Find in your workspace</span>
+        <h2>Search Case by ID or Case Number</h2>
+        <p>Type any exact case number (e.g. “CRL.A. 0817 / 2024” or “0817”) to open its window directly.</p>
+      </div>
+      <div className="hero-search-form">
+        <div className="search-input-large">
+          <Search size={20} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+            placeholder="Try case number “CRL.A. 0817” or “FIR 118”"
+            data-testid="input-home-search"
+          />
+          <span>⌘ K</span>
+        </div>
+        <button className="button button-primary" onClick={handleSearch} data-testid="button-home-search">
+          Search / Open Case <ArrowRight size={16} />
+        </button>
+      </div>
+      <div className="search-scope"><span>Search scope</span><button className="scope-selected" data-testid="button-search-scope-all">All {casesList.length} database records <ChevronDown size={14} /></button><span className="scope-note"><ShieldCheck size={14} /> Live Neon PostgreSQL</span></div>
+    </section>
+    <section className="quick-access"><div className="section-label-row"><span className="section-kicker">Quick access</span><button onClick={() => setLocation('/search')} data-testid="button-view-all-search">View all {casesList.length} cases <ArrowRight size={14} /></button></div><div className="quick-chips"><button onClick={() => setLocation('/search?q=assigned')} data-testid="chip-assigned"><BriefcaseBusiness size={16} /> My assigned cases <span>{casesList.length}</span></button><button onClick={() => setLocation('/search?status=review')} data-testid="chip-review"><FileCheck2 size={16} /> Pending review <span className="chip-alert">3</span></button><button onClick={() => setLocation('/search?type=evidence')} data-testid="chip-evidence"><Fingerprint size={16} /> Recently verified <span>12</span></button><button onClick={() => onToast('Saved searches are available in the full workspace', 'info')} data-testid="chip-saved"><BookOpen size={16} /> Saved searches</button></div></section>
+    <div className="home-grid"><section><div className="section-label-row"><div><span className="section-kicker">Recent database cases ({casesList.length} total)</span><p className="section-subline">Live records loaded from Neon database</p></div><Link href="/search" data-testid="link-see-all-cases">See all <ArrowRight size={14} /></Link></div><div className="case-list">{casesList.slice(0, 4).map((item) => <CaseCard item={item} key={item.id} />)}</div></section><section className="review-panel" id="reviews"><div className="section-label-row"><div><span className="section-kicker">Needs your attention</span><p className="section-subline">Review before the next hearing</p></div><span className="count-pill">03</span></div><div className="review-list"><Link href="/case/nv-2023-1142/documents/ledger-118" className="review-item" data-testid="review-item-ledger"><div className="review-icon review-amber"><FileBadge size={17} /></div><div><strong>Forensic ledger export</strong><span>FIR 118 / 2023 · Integrity review</span><small>Due in 2 days</small></div><ChevronRight size={16} /></Link><Link href="/case/nv-2024-0671" className="review-item" data-testid="review-item-das"><div className="review-icon review-teal"><Gavel size={17} /></div><div><strong>Awaiting case review</strong><span>MISC 671 / 2024 · Bail application</span><small>Due in 7 days</small></div><ChevronRight size={16} /></Link><Link href="/case/nv-2024-0326/documents/judgment-0326" className="review-item" data-testid="review-item-order"><div className="review-icon review-slate"><LockKeyhole size={17} /></div><div><strong>Sealed order available</strong><span>CS 326 / 2024 · Court registry</span><small>Access restricted</small></div><ChevronRight size={16} /></Link></div><button className="button button-quiet review-button" onClick={() => onToast('Opening review queue…')} data-testid="button-open-review-queue">Open review queue <ArrowRight size={15} /></button></section></div>
+    <div className="activity-strip"><div><span className="activity-pulse" /><strong>Audit log operational</strong><span>Database status: Connected to Neon PostgreSQL</span></div><button onClick={() => onToast('Audit log is available to authorized administrators', 'info')} data-testid="button-audit-log">View audit log <ArrowRight size={14} /></button></div>
   </div>;
 }
 
-function SearchPage() {
-  const [location] = useLocation();
+function SearchPage({ casesList }: { casesList: Case[] }) {
+  const [location, setLocation] = useLocation();
   const initial = new URLSearchParams(location.split('?')[1] || '').get('q') || '';
   const [query, setQuery] = useState(initial);
   const [type, setType] = useState('All case types');
@@ -313,30 +396,94 @@ function SearchPage() {
   const [status, setStatus] = useState('All statuses');
   const [docType, setDocType] = useState('All documents');
   const [showFilters, setShowFilters] = useState(true);
+
+  const directMatch = useMemo(() => {
+    const qLower = query.trim().toLowerCase();
+    if (!qLower) return null;
+    const qClean = qLower.replace(/[^a-z0-9]/gi, '');
+    return casesList.find(
+      (c) =>
+        c.id.toLowerCase() === qLower ||
+        c.number.toLowerCase() === qLower ||
+        c.number.replace(/[^a-z0-9]/gi, '').toLowerCase() === qClean
+    );
+  }, [query, casesList]);
+
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    return cases.filter((item) => {
-      const matchQuery = !normalized || [item.number, item.title, item.type, item.court, item.description].some((v) => v.toLowerCase().includes(normalized));
+    return casesList.filter((item) => {
+      const matchQuery = !normalized || [item.number, item.title, item.type, item.court, item.description, item.id].some((v) => (v || '').toLowerCase().includes(normalized));
       const matchType = type === 'All case types' || item.type === type;
       const matchCourt = court === 'All courts' || item.court === court;
       const matchStatus = status === 'All statuses' || item.status === status;
       return matchQuery && matchType && matchCourt && matchStatus;
     });
-  }, [query, type, court, status]);
-  return <div className="page"><PageHeading eyebrow="Workspace search" title="Case search" description="Search across the records you are authorized to access."><button className="button button-secondary" onClick={() => setShowFilters(!showFilters)} data-testid="button-toggle-filters"><SlidersHorizontal size={16} /> {showFilters ? 'Hide filters' : 'Show filters'}</button></PageHeading><div className="search-toolbar"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Case number, FIR, person, or keyword" autoFocus data-testid="input-search-query" /><button className="button button-primary" data-testid="button-submit-search">Search</button></div>{showFilters && <div className="filter-panel"><div className="filter-heading"><Filter size={16} /><strong>Refine results</strong><button onClick={() => { setType('All case types'); setCourt('All courts'); setStatus('All statuses'); setDocType('All documents'); }} data-testid="button-clear-filters">Clear filters</button></div><div className="filter-grid"><label>Case type<select value={type} onChange={(e) => setType(e.target.value)} data-testid="select-case-type"><option>All case types</option><option>Criminal appeal</option><option>Economic offences</option><option>Constitutional petition</option><option>Serious offences</option><option>Bail application</option></select></label><label>Court<select value={court} onChange={(e) => setCourt(e.target.value)} data-testid="select-court"><option>All courts</option><option>High Court of Delhi</option><option>District Court, Bengaluru</option><option>Supreme Court of India</option><option>Sessions Court, Mumbai</option><option>Calcutta High Court</option></select></label><label>Date range<select data-testid="select-date-range"><option>Any date</option><option>Last 30 days</option><option>Last 6 months</option><option>Last year</option></select></label><label>Document type<select value={docType} onChange={(e) => setDocType(e.target.value)} data-testid="select-document-type"><option>All documents</option><option>FIR</option><option>Evidence</option><option>Affidavit</option><option>Judgment</option></select></label><label>Status<select value={status} onChange={(e) => setStatus(e.target.value)} data-testid="select-status"><option>All statuses</option><option>Under review</option><option>Active investigation</option><option>Evidence filed</option><option>Awaiting review</option><option>Judgment reserved</option></select></label></div></div>}<div className="result-summary"><strong>{filtered.length} {filtered.length === 1 ? 'case' : 'cases'} found</strong><span>Sorted by recent activity</span><button className="sort-button" data-testid="button-sort-results">Recent activity <ChevronDown size={14} /></button></div>{filtered.length ? <div className="search-results">{filtered.map((item) => <CaseCard item={item} key={item.id} />)}</div> : <div className="empty-state"><div className="empty-icon"><FileSearch size={25} /></div><h3>No records found</h3><p>Try a broader search term or remove one of the filters. Only records within your authorization scope are shown.</p><button className="button button-secondary" onClick={() => { setQuery(''); setType('All case types'); setCourt('All courts'); setStatus('All statuses'); }} data-testid="button-reset-search">Reset search</button></div>}</div>;
+  }, [query, type, court, status, casesList]);
+
+  const executeSearch = () => {
+    if (query.trim()) {
+      handleCaseSearch(query, setLocation, casesList);
+    }
+  };
+
+  return <div className="page"><PageHeading eyebrow="Workspace search" title="Case search" description={`Search across ${casesList.length} database case records.`}><button className="button button-secondary" onClick={() => setShowFilters(!showFilters)} data-testid="button-toggle-filters"><SlidersHorizontal size={16} /> {showFilters ? 'Hide filters' : 'Show filters'}</button></PageHeading>
+    <div className="search-toolbar">
+      <Search size={18} />
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') executeSearch(); }}
+        placeholder="Case number (e.g. CRL.A. 0817 / 2024), FIR, person, or keyword"
+        autoFocus
+        data-testid="input-search-query"
+      />
+      <button className="button button-primary" onClick={executeSearch} data-testid="button-submit-search">Search / Open</button>
+    </div>
+
+    {directMatch && (
+      <div className="direct-match-card">
+        <div className="direct-match-info">
+          <h4>Direct Match Found for "{directMatch.number}"</h4>
+          <p>{directMatch.title} · {directMatch.court}</p>
+        </div>
+        <button className="button button-primary" onClick={() => setLocation(`/case/${directMatch.id}`)}>
+          Open Case Window <ArrowRight size={15} />
+        </button>
+      </div>
+    )}
+
+    {showFilters && <div className="filter-panel"><div className="filter-heading"><Filter size={16} /><strong>Refine results</strong><button onClick={() => { setType('All case types'); setCourt('All courts'); setStatus('All statuses'); setDocType('All documents'); }} data-testid="button-clear-filters">Clear filters</button></div><div className="filter-grid"><label>Case type<select value={type} onChange={(e) => setType(e.target.value)} data-testid="select-case-type"><option>All case types</option><option>Criminal appeal</option><option>Economic offences</option><option>Constitutional petition</option><option>Serious offences</option><option>Bail application</option><option>Counterfeiting</option><option>Homicide</option><option>Cybercrime</option></select></label><label>Court<select value={court} onChange={(e) => setCourt(e.target.value)} data-testid="select-court"><option>All courts</option><option>High Court of Delhi</option><option>District Court, Bengaluru</option><option>Supreme Court of India</option><option>Sessions Court, Mumbai</option><option>Calcutta High Court</option></select></label><label>Date range<select data-testid="select-date-range"><option>Any date</option><option>Last 30 days</option><option>Last 6 months</option><option>Last year</option></select></label><label>Document type<select value={docType} onChange={(e) => setDocType(e.target.value)} data-testid="select-document-type"><option>All documents</option><option>FIR</option><option>Evidence</option><option>Affidavit</option><option>Judgment</option></select></label><label>Status<select value={status} onChange={(e) => setStatus(e.target.value)} data-testid="select-status"><option>All statuses</option><option>Under review</option><option>Active investigation</option><option>Evidence filed</option><option>Awaiting review</option><option>Judgment reserved</option><option>Not Solved</option></select></label></div></div>}<div className="result-summary"><strong>{filtered.length} {filtered.length === 1 ? 'case' : 'cases'} found</strong><span>Sorted by recent activity</span><button className="sort-button" data-testid="button-sort-results">Recent activity <ChevronDown size={14} /></button></div>{filtered.length ? <div className="search-results">{filtered.map((item) => <CaseCard item={item} key={item.id} />)}</div> : <div className="empty-state"><div className="empty-icon"><FileSearch size={25} /></div><h3>No records found</h3><p>Try a broader search term or remove one of the filters. Only records within your authorization scope are shown.</p><button className="button button-secondary" onClick={() => { setQuery(''); setType('All case types'); setCourt('All courts'); setStatus('All statuses'); }} data-testid="button-reset-search">Reset search</button></div>}</div>;
 }
 
 function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
   return <div className="breadcrumbs"><Link href="/home" data-testid="link-breadcrumb-home">Workspace</Link>{items.map((item, index) => <span key={item.label}><ChevronRight size={13} />{item.href ? <Link href={item.href} data-testid={`link-breadcrumb-${index}`}>{item.label}</Link> : <strong>{item.label}</strong>}</span>)}</div>;
 }
 
-function CasePage() {
+function CasePage({ casesList }: { casesList: Case[] }) {
   const { id = '' } = useParams();
   const [, setLocation] = useLocation();
-  const item = cases.find((entry) => entry.id === id) || cases[0];
+  const [singleCase, setSingleCase] = useState<Case | null>(null);
+
+  useEffect(() => {
+    const foundLocal = casesList.find((entry) => entry.id === id || entry.number === id);
+    if (foundLocal) {
+      setSingleCase(foundLocal);
+    } else {
+      fetch(`/api/cases/${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && !data.error) setSingleCase(data);
+          else setSingleCase(casesList[0] || cases[0]);
+        })
+        .catch(() => setSingleCase(casesList[0] || cases[0]));
+    }
+  }, [id, casesList]);
+
+  const item = singleCase || casesList[0] || cases[0];
   const caseDocs = documents.filter((doc) => doc.caseId === item.id);
   return <div className="page"><Breadcrumbs items={[{ label: item.number }]} /><div className="case-hero"><div><div className="eyebrow">Case file <span className="eyebrow-rule" /></div><h1>{item.title}</h1><p className="case-hero-description">{item.description}</p><div className="case-hero-tags"><StatusBadge status={item.status} tone={item.statusTone} /><span className="subtle-tag"><Gavel size={13} /> {item.type}</span><span className="subtle-tag"><LockKeyhole size={13} /> Restricted workspace</span></div></div><div className="case-hero-actions"><button className="button button-secondary" onClick={() => setLocation(`/case/${item.id}/documents`)} data-testid="button-open-documents"><FolderOpen size={16} /> Open documents</button><button className="button button-primary" onClick={() => setLocation(`/case/${item.id}/documents/${caseDocs[0]?.id || 'digital-0817'}`)} data-testid="button-view-latest-document"><Eye size={16} /> View latest evidence</button></div></div><div className="case-meta-grid"><div><span>Case number</span><strong>{item.number}</strong></div><div><span>Court</span><strong>{item.court}</strong><small>{item.location}</small></div><div><span>Next review</span><strong>{item.nextReview}</strong><small>Registry calendar</small></div><div><span>Assigned team</span><strong>Prosecution desk</strong><small>Priya Nair + 2 others</small></div></div><div className="case-content-grid"><section className="content-card"><div className="card-title-row"><div><span className="section-kicker">Evidence inventory</span><h2>Documents in this case</h2></div><Link href={`/case/${item.id}/documents`} className="text-link" data-testid="link-case-documents">View all <ArrowRight size={14} /></Link></div><div className="document-mini-list">{caseDocs.length ? caseDocs.slice(0, 4).map((doc) => <Link href={`/case/${item.id}/documents/${doc.id}`} className="document-mini" key={doc.id} data-testid={`row-case-document-${doc.id}`}><div className="file-icon"><FileText size={18} /></div><div><strong>{doc.name}</strong><span>{doc.category} <span className="dot-separator" /> {doc.size}</span></div><StatusBadge status={doc.status} /><ChevronRight size={16} /></Link>) : <div className="inline-empty">No documents have been added to this case.</div>}</div></section><section className="content-card case-activity-card"><div className="card-title-row"><div><span className="section-kicker">Case activity</span><h2>Recent access</h2></div><History size={18} className="muted-icon" /></div><div className="activity-entry"><div className="activity-avatar">PN</div><div><strong>You viewed device extraction report</strong><span>12 Jun 2024 · 14:28 IST</span></div></div><div className="activity-entry"><div className="activity-avatar system">SY</div><div><strong>Integrity verification completed</strong><span>11 Jun 2024 · 10:22 IST</span></div></div><div className="activity-entry"><div className="activity-avatar registry">CR</div><div><strong>Registry added affidavit</strong><span>09 Jun 2024 · 11:09 IST</span></div></div><button className="button button-quiet full-width" data-testid="button-view-case-activity">View full case activity <ArrowRight size={15} /></button></section></div><div className="case-notice"><ShieldCheck size={18} /><div><strong>Chain of custody is intact</strong><p>All {caseDocs.length || 0} documents in this case have a recorded source and access history. Last integrity event was 11 Jun 2024.</p></div><Link href={`/case/${item.id}/documents`} data-testid="link-inspect-chain">Inspect chain <ArrowRight size={15} /></Link></div></div>;
 }
+
 
 function DocumentsPage() {
   const { id = '' } = useParams();
@@ -406,10 +553,75 @@ function NotFoundPage() {
 function App() {
   const [authed, setAuthed] = useState(() => localStorage.getItem('nyayavault-auth') === 'true');
   const [toast, setToast] = useState<ToastState>(null);
+  const [casesList, setCasesList] = useState<Case[]>(cases);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/cases')
+      .then((res) => {
+        if (!res.ok) throw new Error('API offline');
+        return res.json();
+      })
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setCasesList(data);
+        }
+      })
+      .catch(() => {
+        // Fall back gracefully to mock cases
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(null), 3600); return () => window.clearTimeout(timer); }, [toast]);
   const onToast = (message: string, tone: ToastTone = 'success') => setToast({ message, tone });
   const logout = () => { localStorage.removeItem('nyayavault-auth'); setAuthed(false); onToast('You have been signed out'); };
-  return <><Switch><Route path="/"><LoginPage onLogin={() => setAuthed(true)} onToast={onToast} /></Route>{authed && <><Route path="/home"><AppShell onLogout={logout} onToast={onToast}><HomePage onToast={onToast} /></AppShell></Route><Route path="/search"><AppShell onLogout={logout} onToast={onToast}><SearchPage /></AppShell></Route><Route path="/case/:id/documents/:docId"><AppShell onLogout={logout} onToast={onToast}><DocumentPage onToast={onToast} /></AppShell></Route><Route path="/case/:id/documents"><AppShell onLogout={logout} onToast={onToast}><DocumentsPage /></AppShell></Route><Route path="/case/:id"><AppShell onLogout={logout} onToast={onToast}><CasePage /></AppShell></Route><Route path="/profile"><AppShell onLogout={logout} onToast={onToast}><ProfilePage onToast={onToast} onLogout={logout} /></AppShell></Route></>}<Route>{authed ? <NotFoundPage /> : <LoginPage onLogin={() => setAuthed(true)} onToast={onToast} />}</Route></Switch><Toast toast={toast} onClose={() => setToast(null)} /></>;
+
+  return <>
+    <Switch>
+      <Route path="/"><LoginPage onLogin={() => setAuthed(true)} onToast={onToast} /></Route>
+      {authed && (
+        <>
+          <Route path="/home">
+            <AppShell onLogout={logout} onToast={onToast} casesList={casesList}>
+              <HomePage casesList={casesList} loading={loading} onToast={onToast} />
+            </AppShell>
+          </Route>
+          <Route path="/search">
+            <AppShell onLogout={logout} onToast={onToast} casesList={casesList}>
+              <SearchPage casesList={casesList} />
+            </AppShell>
+          </Route>
+          <Route path="/case/:id/documents/:docId">
+            <AppShell onLogout={logout} onToast={onToast} casesList={casesList}>
+              <DocumentPage onToast={onToast} />
+            </AppShell>
+          </Route>
+          <Route path="/case/:id/documents">
+            <AppShell onLogout={logout} onToast={onToast} casesList={casesList}>
+              <DocumentsPage />
+            </AppShell>
+          </Route>
+          <Route path="/case/:id">
+            <AppShell onLogout={logout} onToast={onToast} casesList={casesList}>
+              <CasePage casesList={casesList} />
+            </AppShell>
+          </Route>
+          <Route path="/profile">
+            <AppShell onLogout={logout} onToast={onToast} casesList={casesList}>
+              <ProfilePage onToast={onToast} onLogout={logout} />
+            </AppShell>
+          </Route>
+        </>
+      )}
+      <Route>{authed ? <NotFoundPage /> : <LoginPage onLogin={() => setAuthed(true)} onToast={onToast} />}</Route>
+    </Switch>
+    <Toast toast={toast} onClose={() => setToast(null)} />
+  </>;
 }
 
-export default App;
+export default App;

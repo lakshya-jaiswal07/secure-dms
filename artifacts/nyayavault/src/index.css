@@ -961,9 +961,158 @@ h1 { color: var(--navy-deep); font: 800 32px/1.13 var(--app-font-serif); letter-
   .identity-details { grid-template-columns: 1fr; gap: 13px; }
   .password-form { grid-template-columns: 1fr; }
   .password-form .button { justify-self: stretch; }
-  .login-main { padding: 24px 20px; }
-  .login-form-wrap h1 { font-size: 33px; }
-  .authorized-footer { display: block; line-height: 1.8; }
-  .authorized-footer span { display: block; }
-  .toast { right: 15px; bottom: 15px; }
+
+/* Custom Case Card Tile matching reference screenshot */
+.case-card-tile {
+  display: block;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.18s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  position: relative;
 }
+
+.case-card-tile:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+}
+
+.case-card-tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.case-tile-number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.case-tile-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.case-tile-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.case-card-tile-bottom {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.case-tile-updated {
+  font-size: 13px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.case-tile-chevron {
+  color: #cbd5e1;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.case-card-tile:hover .case-tile-chevron {
+  color: #64748b;
+  transform: translateX(2px);
+}
+
+/* Status Pill Badges */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.status-pill-amber {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.status-pill-amber .status-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #d97706;
+}
+
+.status-pill-teal {
+  background-color: #ccfbf1;
+  color: #115e59;
+  border: 1px solid #99f6e4;
+}
+
+.status-pill-teal .status-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #0d9488;
+}
+
+.status-pill-slate {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.status-pill-slate .status-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #64748b;
+}
+
+/* Direct Match Banner in Search */
+.direct-match-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.direct-match-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  color: #166534;
+}
+
+.direct-match-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #15803d;
+}
+

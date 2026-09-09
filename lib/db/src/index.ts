@@ -2,7 +2,7 @@ import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import fs from "fs";
 import path from "path";
-import * as schema from "./schema";
+import * as schema from "./schema/index.js";
 
 const { Pool } = pg;
 
@@ -46,4 +46,5 @@ if (process.env.DATABASE_URL) {
   console.warn("⚠️  DATABASE_URL environment variable is not set. To connect to your hosted Neon database, add DATABASE_URL to your environment or .env file.");
 }
 
-export * from "./schema";
+export * from "./schema/index.js";
+
