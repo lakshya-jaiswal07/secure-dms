@@ -1,0 +1,47 @@
+Build a frontend for a secure web platform (working name: "NyayaVault" — rename as you like) that lets police officers, investigating officers, prosecutors, defense lawyers, judges, and court clerks search, view, and manage FIRs, chargesheets, evidence files, and court documents. The tone should feel like a professional, trustworthy government/legal-tech product — clean, high-contrast, no playful illustrations, minimal clutter. Use a deep navy / charcoal primary color with generous white space and a single accent color (amber or teal) reserved for status badges and calls to action. Typography: clean sans-serif (Inter or similar), generous line height, sentence case labels throughout (no ALL CAPS).
+
+1. Login page
+Centered card on a plain background — no busy hero imagery, this is a secure system, not a marketing site
+Fields: Username, Password (with show/hide toggle)
+An "I'm not a robot" checkbox (styled like a CAPTCHA widget)
+"Forgot password?" link below the password field, opening a simple email-entry recovery flow
+Primary "Log in" button
+Small footer text: "Authorized personnel only · All access is logged" — reinforces the security context
+Inline validation errors for empty fields, wrong credentials, or an unchecked CAPTCHA
+2. Home screen (after login)
+Top nav bar: platform logo/name on the left, a notification bell, and a profile icon on the top right
+Clicking the profile icon opens a dropdown with two options: "View profile" and "Log out"
+Center of the screen: a large, prominent search box (placeholder: "Search by case number, FIR number, name, or keyword…") — this is the primary action on the page
+Below it, a few quick-access chips ("My recent cases", "Pending my review", "Recently shared with me") so the screen isn't empty on first load
+A small role badge near the profile icon (e.g. "Investigating officer" or "Judge") so the user always knows which role-view they're in
+3. Search results page
+Triggered after a keyword search
+Results as a list of case cards: case number, case title, court, status badge (open/closed/under investigation, color-coded), date, and a snippet of matched text
+Filters (sidebar or top bar): case type, court, date range, document type, status
+Empty state with a friendly message if no cases match
+Clicking a card opens the case detail page
+4. Case detail page
+Header: case number, title, court, status badge, assigned officer/judge
+Metadata panel: parties involved, filing date, related sections of law, current stage
+A clear "View documents" button/tab
+Only show actions the logged-in user's role can actually perform — e.g. a defense lawyer sees "Request access" where a judge sees "Approve / sign"
+5. Documents view (within a case)
+List of documents (FIR, chargesheet, evidence photos, affidavits, judgments), each with a document-type icon, filename, upload date, uploader, and an integrity badge ("Verified" in green / "Tampering detected" in red) based on hash verification
+Clicking a document opens a detail panel with:
+A preview, or a "Download to view" state for file types that can't preview inline
+A trail of artifacts / chain-of-custody panel — a vertical timeline of every action on this document (uploaded by X at [time], viewed by Y, shared with Z, hash verified ✓). Give this real visual weight — icons per action type, timestamps, actor names — it's a core trust feature, not just a plain log
+A "Verify integrity" button that re-checks the document hash live and updates the badge
+Role-permitted actions only: download, share (modal to generate a scoped, expiring share link), sign, or flag for review
+6. Profile page
+Name, role, department, badge/employee ID
+Recent activity summary
+Change password option
+Log out button here too, for consistency
+7. Global elements to include
+Loading skeletons (not spinners) for search results and document lists
+Toasts for actions like "Document verified", "Share link created", "Access denied"
+Breadcrumb navigation (Home > Case #1234 > Documents > FIR_2024_0091.pdf)
+Fully responsive — will be demoed on a laptop but shouldn't break on a tablet
+Accessible: sufficient color contrast, keyboard-navigable forms, alt text on icons
+
+Build this as a clickable, realistic-feeling prototype with placeholder/mock data for 4–5 sample cases, so the full flow (login → search → case → documents → trail) can be demoed end to end before a real backend is connected.

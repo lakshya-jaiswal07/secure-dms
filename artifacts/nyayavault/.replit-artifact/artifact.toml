@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "NyayaVault"
+description = "A secure legal evidence platform prototype for authorized justice-system professionals to search cases, review court documents, and verify chain of custody."
+version = "1.0.0"
+id = "artifacts/nyayavault"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18547
+
+[services.development]
+run = "pnpm --filter @workspace/nyayavault run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nyayavault", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/nyayavault/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18547"
+BASE_PATH = "/"
