@@ -1,0 +1,88 @@
+{
+  "success": true,
+  "document_id": "DOC-091A1A34",
+  "input": {
+    "original_filename": "handwritten_test.png",
+    "saved_path": "uploads/DOC-091A1A34_handwritten_test.png",
+    "sha256": "091a1a343aa156bac58cbee6d0aac60c3b570cecafb5aacb105aa5f04871244a",
+    "size_bytes": 106516,
+    "file_type": "image",
+    "total_pages": 1
+  },
+  "total_pages": 1,
+  "pages": [
+    {
+      "page_number": 1,
+      "document_quality": {
+        "blur": "MODERATE (variance: 167.9)",
+        "contrast": "MODERATE (rms: 21.1)",
+        "brightness": "NORMAL (mean: 180.2)",
+        "skew_angle": "-2.98°"
+      },
+      "line_count": 1,
+      "full_text": "The Investigation started on monday.",
+      "handwriting_features": {
+        "slant": "vertical_neutral_slant (+0.0°)",
+        "baseline": "relatively_stable_horizontal (slope: 0.014)",
+        "line_spacing": "moderate_line_spacing (0.0px, ratio: 1.00)",
+        "writing_density": "light_density (8.8% occupied)",
+        "average_line_height": "75.0px",
+        "average_line_length": "1509.0px (94.3% page width)",
+        "consistency": "high_consistency (CV: 0.00)"
+      }
+    }
+  ],
+  "document_quality": {
+    "blur": "MODERATE (variance: 167.9)",
+    "contrast": "MODERATE (rms: 21.1)",
+    "brightness": "NORMAL (mean: 180.2)",
+    "skew_angle": "-2.98°"
+  },
+  "lines": [
+    {
+      "line_number": 1,
+      "page_number": 1,
+      "page_line_number": 1,
+      "bounding_box": {
+        "x": 91,
+        "y": 75,
+        "width": 1509,
+        "height": 75
+      },
+      "crop_size": "1509x75",
+      "ink_percentage": 12.6,
+      "ruling_percentage": 0.2,
+      "text": "The Investigation started on monday.",
+      "model_confidence": 0.705,
+      "confidence": 0.705,
+      "status": "AUTO_ACCEPTED",
+      "quality_flag": "CLEAN"
+    }
+  ],
+  "full_text": "The Investigation started on monday.",
+  "text_analysis": {
+    "word_count": 5,
+    "character_count": 36,
+    "dates": [
+      "Monday"
+    ],
+    "names": [],
+    "locations": [],
+    "organizations": [],
+    "keywords": [
+      "investigation",
+      "started",
+      "monday"
+    ]
+  },
+  "handwriting_features": {
+    "slant": "vertical_neutral_slant (+0.0°)",
+    "baseline": "relatively_stable_horizontal (slope: 0.014)",
+    "line_spacing": "moderate_line_spacing (0.0px, ratio: 1.00)",
+    "writing_density": "light_density (8.8% occupied)",
+    "average_line_height": "75.0px",
+    "average_line_length": "1509.0px (94.3% page width)",
+    "consistency": "high_consistency (CV: 0.00)"
+  },
+  "warnings": []
+}

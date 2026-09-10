@@ -1,0 +1,21 @@
+# Secure DMS: Handwriting Analyzer & OCR Backend Dependencies
+# Python 3.10+ recommended
+
+# Computer Vision & Image Processing
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=9.5.0
+
+# PDF Processing (PDF page to image extraction)
+pypdfium2>=4.0.0
+
+# Deep Learning & TrOCR Handwriting Model
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
+requests>=2.28.0
+
+# REST API & ASGI Server
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+python-multipart>=0.0.6
